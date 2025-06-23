@@ -1,52 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
-import LoginScreen from '../screens/Auth/LoginScreen';
+// Importar suas telas
+import LoginScreen from '../screens/Auth/LoginScreens';
 import HomeAdminScreen from '../screens/Admin/HomeAdminScreen';
 import HomeTecnicoScreen from '../screens/Tecnico/HomeTecnicoScreen';
-import HomeUsuarioScreen from '../screens/Usuario/HomeUsuarioScreen';
+import HomeUsuarioScreen from '../screens/Usuario/HomeUsuárioScreen';
 
 const Stack = createNativeStackNavigator();
 
 const Routes = () => {
   const { user, loading } = useAuth();
-  const [userRole, setUserRole] = useState<
-    'admin' | 'tecnico' | 'usuario' | null
-  >(null);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [loadingUserType, setLoadingUserType] = useState(true);
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user) {
-        try {
-          const userRef = doc(db, 'usuarios', user.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setUserRole(data.tipo);
-          }
-        } catch (error) {
-          console.error('Erro ao buscar tipo de usuário:', error);
+    if (!user) {
+      setUserType(null);
+      setLoadingUserType(false);
+      return;
+    }
+
+    const fetchUserType = async () => {
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserType(data?.tipo || null);
+        } else {
+          setUserType(null);
         }
+      } catch (error) {
+        console.error('Erro ao buscar tipo do usuário:', error);
+        setUserType(null);
+      } finally {
+        setLoadingUserType(false);
       }
-      setRoleLoading(false);
     };
 
-    if (user) {
-      fetchUserRole();
-    } else {
-      setRoleLoading(false);
-    }
+    fetchUserType();
   }, [user]);
 
-  if (loading || roleLoading) {
+  if (loading || loadingUserType) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
@@ -54,15 +57,30 @@ const Routes = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
+        // Usuário não logado -> tela login
         <Stack.Screen name="Login" component={LoginScreen} />
-      ) : userRole === 'admin' ? (
+      ) : userType === 'admin' ? (
         <Stack.Screen name="HomeAdmin" component={HomeAdminScreen} />
-      ) : userRole === 'tecnico' ? (
+      ) : userType === 'tecnico' ? (
         <Stack.Screen name="HomeTecnico" component={HomeTecnicoScreen} />
-      ) : userRole === 'usuario' ? (
+      ) : userType === 'usuario' ? (
         <Stack.Screen name="HomeUsuario" component={HomeUsuarioScreen} />
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen
+          name="SemPermissao"
+          component={() => (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: 20,
+              }}
+            >
+              <Text>Tipo de usuário não definido.</Text>
+            </View>
+          )}
+        />
       )}
     </Stack.Navigator>
   );
