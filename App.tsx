@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
-import Routes from './src/navigation'; // ← Aqui você define qual rota exibir
+import AppNavigator from './src/navigation'; // ← Aqui você define qual rota exibir
 
 export default function App() {
   return (
@@ -11,7 +11,7 @@ export default function App() {
       <NavigationContainer>
         {' '}
         {/* 2️⃣ Gerencia as telas e a navegação */}
-        <Routes /> {/* 3️⃣ Exibe telas com base no tipo de usuário */}
+        <AppNavigator /> {/* 3️⃣ Exibe telas com base no tipo de usuário */}
       </NavigationContainer>
     </AuthProvider>
   );

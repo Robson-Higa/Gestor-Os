@@ -5,11 +5,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
-// Importar suas telas
-import LoginScreen from '../screens/Auth/LoginScreens';
+import LoginScreen from '../screens/Auth/LoginScreen';
 import HomeAdminScreen from '../screens/Admin/HomeAdminScreen';
 import HomeTecnicoScreen from '../screens/Tecnico/HomeTecnicoScreen';
-import HomeUsuarioScreen from '../screens/Usuario/HomeUsuárioScreen';
+import HomeUsuarioScreen from '../screens/Usuario/HomeUsuarioScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -57,7 +56,6 @@ const Routes = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
-        // Usuário não logado -> tela login
         <Stack.Screen name="Login" component={LoginScreen} />
       ) : userType === 'admin' ? (
         <Stack.Screen name="HomeAdmin" component={HomeAdminScreen} />
@@ -68,15 +66,9 @@ const Routes = () => {
       ) : (
         <Stack.Screen
           name="SemPermissao"
+          key="no-role"
           component={() => (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                padding: 20,
-              }}
-            >
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
               <Text>Tipo de usuário não definido.</Text>
             </View>
           )}

@@ -37,13 +37,12 @@ const HomeUsuarioScreen = () => {
   // Modal feedback estados
   const [modalFeedbackVisivel, setModalFeedbackVisivel] = useState(false);
   const [feedback, setFeedback] = useState('');
-  const [demandaSelecionadaId, setDemandaSelecionadaId] = useState<
-    string | null
-  >(null);
+  const [demandaSelecionadaId, setDemandaSelecionadaId] = useState<string | null>(null);
 
   const [descricao, setDescricao] = useState('');
   const [unidade, setUnidade] = useState('');
 
+  // Carregar demandas do usuário logado
   const carregarDemandas = async () => {
     try {
       const q = query(
@@ -72,6 +71,7 @@ const HomeUsuarioScreen = () => {
     setModalFeedbackVisivel(true);
   };
 
+  // Envia feedback e atualiza status da demanda
   const enviarFeedback = async () => {
     if (!demandaSelecionadaId) return;
     try {
@@ -88,12 +88,14 @@ const HomeUsuarioScreen = () => {
     }
   };
 
+  // Abre modal para criação de nova demanda
   const abrirModalNovaDemanda = () => {
     setDescricao('');
     setUnidade('');
     setModalNovaDemandaVisivel(true);
   };
 
+  // Cria nova demanda no Firestore
   const criarNovaDemanda = async () => {
     if (!descricao || !unidade) return;
 
