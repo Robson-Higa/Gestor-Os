@@ -10,6 +10,8 @@ import { signOut } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../services/firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { seedDatabase } from '../../services/seedDatabase';
 
 interface Unidade {
   id: string;
@@ -18,6 +20,7 @@ interface Unidade {
 
 const HomeAdminScreen = () => {
   const { user } = useAuth();
+  const navigation = useNavigation<any>();
   const [unidades, setUnidades] = useState<Unidade[]>([]);
 
   useEffect(() => {
@@ -42,10 +45,18 @@ const HomeAdminScreen = () => {
     await signOut(auth);
   };
 
+  const irParaCadastro = () => {
+    navigation.navigate('CadastroUsuario');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo, Administrador</Text>
       <Text style={styles.subtitle}>Usuário: {user?.email}</Text>
+
+      <TouchableOpacity style={styles.cadastrarButton} onPress={irParaCadastro}>
+        <Text style={styles.cadastrarText}>+ Cadastrar Novo Usuário</Text>
+      </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>Unidades Cadastradas:</Text>
       <FlatList
@@ -64,6 +75,9 @@ const HomeAdminScreen = () => {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Sair</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.logoutButton} onPress={seedDatabase}>
+  <Text style={styles.logoutText}>Popular Base de Dados</Text>
+</TouchableOpacity>
     </View>
   );
 };
@@ -83,6 +97,17 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     marginBottom: 20,
+  },
+  cadastrarButton: {
+    backgroundColor: '#007bff',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cadastrarText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 18,

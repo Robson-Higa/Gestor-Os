@@ -17,7 +17,8 @@ import {
   updateDoc,
   doc,
 } from 'firebase/firestore';
-import { db } from '../../services/firebaseConfig';
+import { signOut } from 'firebase/auth';
+import { db, auth } from '../../services/firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Demanda {
@@ -39,7 +40,6 @@ const HomeTecnicoScreen = () => {
 
   const carregarDemandas = async () => {
     try {
-      // Buscar demandas atribuídas ao técnico e com status aberta ou em atendimento
       const q = query(
         collection(db, 'demandas'),
         where('tecnicoId', '==', user?.uid),
@@ -53,6 +53,7 @@ const HomeTecnicoScreen = () => {
       setDemandas(lista);
     } catch (error) {
       console.error('Erro ao buscar demandas do técnico:', error);
+      Alert.alert('Erro', 'Falha ao carregar demandas.');
     }
   };
 
@@ -72,7 +73,7 @@ const HomeTecnicoScreen = () => {
       const ref = doc(db, 'demandas', demandaSelecionada.id);
       await updateDoc(ref, {
         descricaoServico,
-        status: 'em_atendimento', // Marca como em atendimento
+        status: 'em_atendimento',
       });
       setModalVisivel(false);
       setDemandaSelecionada(null);
@@ -80,6 +81,7 @@ const HomeTecnicoScreen = () => {
       carregarDemandas();
     } catch (error) {
       console.error('Erro ao salvar serviço:', error);
+      Alert.alert('Erro', 'Falha ao salvar o serviço.');
     }
   };
 
@@ -96,12 +98,28 @@ const HomeTecnicoScreen = () => {
       carregarDemandas();
     } catch (error) {
       console.error('Erro ao fechar demanda:', error);
+      Alert.alert('Erro', 'Falha ao fechar demanda.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+      Alert.alert('Erro', 'Falha ao sair da conta.');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Demandas Atribuídas</Text>
+      {/* Header com título e logout */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Demandas Atribuídas</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Sair</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={demandas}
@@ -138,28 +156,19 @@ const HomeTecnicoScreen = () => {
               onChangeText={setDescricaoServico}
             />
 
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={salvarServico}
-            >
+            <TouchableOpacity style={styles.modalButton} onPress={salvarServico}>
               <Text style={styles.modalButtonText}>Salvar Serviço</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.modalButton,
-                { backgroundColor: '#dc3545', marginTop: 10 },
-              ]}
+              style={[styles.modalButton, { backgroundColor: '#dc3545', marginTop: 10 }]}
               onPress={fecharDemanda}
             >
               <Text style={styles.modalButtonText}>Fechar Demanda</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.modalButton,
-                { backgroundColor: '#6c757d', marginTop: 10 },
-              ]}
+              style={[styles.modalButton, { backgroundColor: '#6c757d', marginTop: 10 }]}
               onPress={() => setModalVisivel(false)}
             >
               <Text style={styles.modalButtonText}>Cancelar</Text>
@@ -175,7 +184,20 @@ export default HomeTecnicoScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  title: { fontSize: 20, fontWeight: 'bold' },
+  logoutButton: {
+    backgroundColor: '#dc3545',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  logoutText: { color: '#fff', fontWeight: 'bold' },
   card: {
     padding: 14,
     backgroundColor: '#f5f5f5',

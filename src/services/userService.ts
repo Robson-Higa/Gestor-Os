@@ -15,12 +15,12 @@ export const cadastrarNovoUsuario = async (
   senha: string,
   tipo: 'admin' | 'tecnico' | 'usuario'
 ) => {
-  // Cria o usuário no Auth
+  // Cria o usuário no Firebase Auth
   const credenciais = await createUserWithEmailAndPassword(auth, email, senha);
   const uid = credenciais.user.uid;
 
-  // Salva dados no Firestore na coleção "users"
-  await setDoc(doc(db, 'users', uid), {
+  // Salva dados no Firestore na coleção "usuarios"
+  await setDoc(doc(db, 'usuarios', uid), {
     nome,
     email,
     tipo,

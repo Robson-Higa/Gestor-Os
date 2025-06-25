@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
+  Alert,
 } from 'react-native';
 import {
   collection,
@@ -31,10 +32,10 @@ interface Demanda {
 
 const HomeUsuarioScreen = () => {
   const { user } = useAuth();
+
   const [demandas, setDemandas] = useState<Demanda[]>([]);
   const [modalNovaDemandaVisivel, setModalNovaDemandaVisivel] = useState(false);
 
-  // Modal feedback estados
   const [modalFeedbackVisivel, setModalFeedbackVisivel] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [demandaSelecionadaId, setDemandaSelecionadaId] = useState<string | null>(null);
@@ -42,36 +43,32 @@ const HomeUsuarioScreen = () => {
   const [descricao, setDescricao] = useState('');
   const [unidade, setUnidade] = useState('');
 
-  // Carregar demandas do usuário logado
   const carregarDemandas = async () => {
+    if (!user) return;
     try {
-      const q = query(
-        collection(db, 'demandas'),
-        where('usuarioId', '==', user?.uid),
-      );
+      const q = query(collection(db, 'demandas'), where('usuarioId', '==', user.uid));
       const snapshot = await getDocs(q);
-      const lista = snapshot.docs.map((doc) => ({
+      const lista = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Demanda[];
       setDemandas(lista);
     } catch (error) {
       console.error('Erro ao buscar demandas do usuário:', error);
+      Alert.alert('Erro', 'Não foi possível carregar suas demandas.');
     }
   };
 
   useEffect(() => {
     carregarDemandas();
-  }, []);
+  }, [user]);
 
-  // Abre modal para feedback ao confirmar serviço
   const confirmarConclusao = (id: string) => {
     setDemandaSelecionadaId(id);
     setFeedback('');
     setModalFeedbackVisivel(true);
   };
 
-  // Envia feedback e atualiza status da demanda
   const enviarFeedback = async () => {
     if (!demandaSelecionadaId) return;
     try {
@@ -85,32 +82,36 @@ const HomeUsuarioScreen = () => {
       carregarDemandas();
     } catch (error) {
       console.error('Erro ao enviar feedback:', error);
+      Alert.alert('Erro', 'Não foi possível enviar o feedback.');
     }
   };
 
-  // Abre modal para criação de nova demanda
   const abrirModalNovaDemanda = () => {
     setDescricao('');
     setUnidade('');
     setModalNovaDemandaVisivel(true);
   };
 
-  // Cria nova demanda no Firestore
   const criarNovaDemanda = async () => {
-    if (!descricao || !unidade) return;
+    if (!descricao.trim() || !unidade.trim()) {
+      Alert.alert('Erro', 'Preencha todos os campos para criar uma nova demanda.');
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'demandas'), {
         usuarioId: user?.uid,
-        descricaoProblema: descricao,
-        unidade,
+        descricaoProblema: descricao.trim(),
+        unidade: unidade.trim(),
         status: 'aberta',
         dataCriacao: serverTimestamp(),
       });
       setModalNovaDemandaVisivel(false);
       carregarDemandas();
+      Alert.alert('Sucesso', 'Demanda criada com sucesso!');
     } catch (error) {
       console.error('Erro ao criar nova demanda:', error);
+      Alert.alert('Erro', 'Não foi possível criar a demanda.');
     }
   };
 
@@ -144,19 +145,12 @@ const HomeUsuarioScreen = () => {
         )}
       />
 
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={abrirModalNovaDemanda}
-      >
+      <TouchableOpacity style={styles.addButton} onPress={abrirModalNovaDemanda}>
         <Text style={styles.addButtonText}>+ Nova Demanda</Text>
       </TouchableOpacity>
 
       {/* Modal para criação de nova demanda */}
-      <Modal
-        visible={modalNovaDemandaVisivel}
-        animationType="slide"
-        transparent
-      >
+      <Modal visible={modalNovaDemandaVisivel} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>Nova Demanda</Text>
@@ -165,6 +159,7 @@ const HomeUsuarioScreen = () => {
               style={styles.input}
               value={unidade}
               onChangeText={setUnidade}
+              autoCapitalize="words"
             />
             <TextInput
               placeholder="Descreva o problema"
@@ -172,11 +167,9 @@ const HomeUsuarioScreen = () => {
               multiline
               value={descricao}
               onChangeText={setDescricao}
+              textAlignVertical="top"
             />
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={criarNovaDemanda}
-            >
+            <TouchableOpacity style={styles.modalButton} onPress={criarNovaDemanda}>
               <Text style={styles.modalButtonText}>Enviar</Text>
             </TouchableOpacity>
           </View>
@@ -194,11 +187,9 @@ const HomeUsuarioScreen = () => {
               multiline
               value={feedback}
               onChangeText={setFeedback}
+              textAlignVertical="top"
             />
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={enviarFeedback}
-            >
+            <TouchableOpacity style={styles.modalButton} onPress={enviarFeedback}>
               <Text style={styles.modalButtonText}>Enviar Feedback</Text>
             </TouchableOpacity>
           </View>

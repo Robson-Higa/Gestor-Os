@@ -11,15 +11,15 @@ import {
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
-import { cadastrarNovoUsuario } from '../../services/userService'
-// <- você deve mover a função para userService.ts
+import { cadastrarNovoUsuario } from '../../services/userService';
+import { TipoUsuario } from '../../types/UserTypes';
 
 const CadastroUsuarioScreen = () => {
   const { user } = useAuth(); // Admin logado
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [tipo, setTipo] = useState<'admin' | 'tecnico' | 'usuario'>('usuario');
+  const [tipo, setTipo] = useState<TipoUsuario>('usuario');
   const [loading, setLoading] = useState(false);
 
   const cadastrarUsuario = async () => {
@@ -28,22 +28,20 @@ const CadastroUsuarioScreen = () => {
       return;
     }
 
+    const senhaAdmin = senha; // Senha do novo usuário
+    const adminEmail = user?.email; // E-mail do admin logado
+
     setLoading(true);
-    const credenciaisAdmin = auth.currentUser;
 
     try {
-      // Cadastra novo usuário com função reutilizável
-      await cadastrarNovoUsuario(nome, email, senha, tipo);
+      await cadastrarNovoUsuario(nome, email, senhaAdmin, tipo);
 
       Alert.alert('Sucesso', `Usuário ${nome} cadastrado com sucesso.`);
 
-      // Reautentica o admin atual
-      if (credenciaisAdmin?.email) {
-        const senhaTemporaria = senha; // senhas devem ser separadas em produção
-        await signInWithEmailAndPassword(auth, credenciaisAdmin.email, senhaTemporaria);
+      if (adminEmail) {
+        await signInWithEmailAndPassword(auth, adminEmail, '123456'); // <- lembre de tratar isso corretamente depois!
       }
 
-      // Limpa os campos
       setNome('');
       setEmail('');
       setSenha('');
@@ -66,7 +64,6 @@ const CadastroUsuarioScreen = () => {
         onChangeText={setNome}
         style={styles.input}
       />
-
       <TextInput
         placeholder="E-mail"
         keyboardType="email-address"
@@ -75,7 +72,6 @@ const CadastroUsuarioScreen = () => {
         autoCapitalize="none"
         style={styles.input}
       />
-
       <TextInput
         placeholder="Senha"
         value={senha}
@@ -86,14 +82,14 @@ const CadastroUsuarioScreen = () => {
 
       <Text style={styles.label}>Tipo de usuário:</Text>
       <View style={styles.buttonGroup}>
-        {['admin', 'tecnico', 'usuario'].map((t) => (
+        {(['admin', 'tecnico', 'usuario'] as TipoUsuario[]).map((t) => (
           <TouchableOpacity
             key={t}
             style={[
               styles.tipoButton,
               tipo === t && styles.tipoButtonSelected,
             ]}
-            onPress={() => setTipo(t as any)}
+            onPress={() => setTipo(t)}
           >
             <Text style={styles.tipoButtonText}>{t}</Text>
           </TouchableOpacity>

@@ -1,79 +1,92 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth } from '../contexts/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebaseConfig';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../services/firebaseConfig';
 
-// Telas
-import LoginScreen from '../screens/Auth/LoginScreen';
-import HomeAdminScreen from '../screens/Admin/HomeAdminScreen';
-import HomeTecnicoScreen from '../screens/Tecnico/HomeTecnicoScreen';
-import HomeUsuarioScreen from '../screens/Usuario/HomeUsuarioScreen';
-import SemPermissaoScreen from '../screens/SemPermissaoScreen';
+const LoginScreen = () => {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
 
-const Stack = createNativeStackNavigator();
+  const handleLogin = async () => {
+    if (!email || !senha) {
+      Alert.alert('Por favor, preencha email e senha');
+      return;
+    }
 
-const AppNavigator = () => {
-  const { user, loading } = useAuth();
-  const [userType, setUserType] = useState<string | null>(null);
-  const [loadingUserType, setLoadingUserType] = useState(true);
-
-  useEffect(() => {
-    const fetchUserType = async () => {
-      if (!user) {
-        setUserType(null);
-        setLoadingUserType(false);
-        return;
-      }
-
-      try {
-        const userDocRef = doc(db, 'usuarios', user.uid); // certifique-se de que a coleção é "usuarios"
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setUserType(data?.tipo || null);
-        } else {
-          setUserType(null);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar tipo do usuário:', error);
-        setUserType(null);
-      } finally {
-        setLoadingUserType(false);
-      }
-    };
-
-    fetchUserType();
-  }, [user]);
-
-  if (loading || loadingUserType) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      // O contexto de autenticação vai atualizar automaticamente
+    } catch (error: any) {
+      Alert.alert('Erro no login', error.message || 'Verifique seus dados');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!user ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        ) : userType === 'admin' ? (
-          <Stack.Screen name="HomeAdmin" component={HomeAdminScreen} />
-        ) : userType === 'tecnico' ? (
-          <Stack.Screen name="HomeTecnico" component={HomeTecnicoScreen} />
-        ) : userType === 'usuario' ? (
-          <Stack.Screen name="HomeUsuario" component={HomeUsuarioScreen} />
-        ) : (
-          <Stack.Screen name="SemPermissao" component={SemPermissaoScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={styles.container}>
+      <Text style={styles.title}>Login</Text>
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Senha"
+        value={senha}
+        onChangeText={setSenha}
+        secureTextEntry
+        style={styles.input}
+      />
+      <TouchableOpacity onPress={handleLogin} style={styles.button} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
-export default AppNavigator;
+export default LoginScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 14,
+    marginBottom: 15,
+  },
+  button: {
+    backgroundColor: '#007bff',
+    padding: 14,
+    borderRadius: 6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});
